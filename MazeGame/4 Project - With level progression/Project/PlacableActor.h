@@ -9,13 +9,15 @@ enum class ActorColor
 	Red = 12,
 	SolidGreen = 34,
 	SolidRed = 68,
-	SolidBlue = 153
+	SolidBlue = 153,
+	Cyan = 188
 };
 
 enum class ActorType
 {
 	Door,
 	Enemy,
+	TrackingEnemy,
 	Goal,
 	Key,
 	Money,

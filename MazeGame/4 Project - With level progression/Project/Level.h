@@ -16,7 +16,7 @@ public:
 	Level();
 	~Level();
 
-	bool Load(std::string levelName, int* playerX, int* playerY);
+	bool Load(std::string levelName, int* playerX, int* playerY, PlacableActor* player);
 	void Draw();
 	PlacableActor* UpdateActors(int x, int y);
 
@@ -29,7 +29,7 @@ public:
 	static constexpr char WAL = (char)219;
 
 private:
-	bool ConvertLevel(int* playerX, int* playerY);
+	bool ConvertLevel(int* playerX, int* playerY, PlacableActor* player);
 	int GetIndexFromCoordinates(int x, int y);
 
 };

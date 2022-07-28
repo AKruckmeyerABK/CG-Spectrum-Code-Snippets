@@ -9,6 +9,7 @@
 #include "Door.h"
 #include "Goal.h"
 #include "Money.h"
+#include "TrackingEnemy.h"
 
 using namespace std;
 
@@ -35,7 +36,7 @@ Level::~Level()
 	}
 }
 
-bool Level::Load(std::string levelName, int* playerX, int* playerY)
+bool Level::Load(std::string levelName, int* playerX, int* playerY, PlacableActor* player)
 {
 	levelName.insert(0, "../");
 	ifstream levelFile;
@@ -63,7 +64,7 @@ bool Level::Load(std::string levelName, int* playerX, int* playerY)
 		levelFile.read(m_pLevelData, (long long)m_width * (long long)m_height);
 		
 		// Convert level
-		bool anyWarnings = ConvertLevel(playerX, playerY);
+		bool anyWarnings = ConvertLevel(playerX, playerY, player);
 		if (anyWarnings)
 		{
 			cout << "There were some warnings in the level data, see above." << endl;
@@ -112,7 +113,7 @@ bool Level::IsWall(int x, int y)
 	return m_pLevelData[GetIndexFromCoordinates(x, y)] == WAL;
 }
 
-bool Level::ConvertLevel(int* playerX, int* playerY)
+bool Level::ConvertLevel(int* playerX, int* playerY, PlacableActor* player)
 {
 	bool anyWarnings = false;
 	for (int y = 0; y < m_height; ++y)
@@ -178,6 +179,11 @@ bool Level::ConvertLevel(int* playerX, int* playerY)
 			case 'v':
 				m_pLevelData[index] = ' ';
 				m_pActors.push_back(new Enemy(x, y, 0, 2));
+				m_pLevelData[index] = ' '; // clear the level
+				break;
+			case 't':
+				m_pLevelData[index] = ' ';
+				m_pActors.push_back(new TrackingEnemy(x, y, this, (Player*) player));
 				m_pLevelData[index] = ' '; // clear the level
 				break;
 				break;

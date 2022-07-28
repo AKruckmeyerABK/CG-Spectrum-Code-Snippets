@@ -51,7 +51,7 @@ bool GameplayState::Load()
 
 	m_pLevel = new Level();
 	
-	return m_pLevel->Load(m_LevelNames.at(m_currentLevel), m_player.GetXPositionPointer(), m_player.GetYPositionPointer());
+	return m_pLevel->Load(m_LevelNames.at(m_currentLevel), m_player.GetXPositionPointer(), m_player.GetYPositionPointer(), &m_player);
 
 }
 
