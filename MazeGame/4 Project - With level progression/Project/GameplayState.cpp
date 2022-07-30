@@ -14,6 +14,8 @@
 #include "Utility.h"
 #include "StateMachineExampleGame.h"
 
+#include "TrackingEnemy.h"
+
 using namespace std;
 
 constexpr int kArrowInput = 224;
@@ -153,6 +155,23 @@ void GameplayState::HandleCollision(int newPlayerX, int newPlayerY)
 		case ActorType::Enemy:
 		{
 			Enemy* collidedEnemy = dynamic_cast<Enemy*>(collidedActor);
+			assert(collidedEnemy);
+			AudioManager::GetInstance()->PlayLoseLivesSound();
+			collidedEnemy->Remove();
+			m_player.SetPosition(newPlayerX, newPlayerY);
+
+			m_player.DecrementLives();
+			if (m_player.GetLives() < 0)
+			{
+				//TODO: Go to game over screen
+				AudioManager::GetInstance()->PlayLoseSound();
+				m_pOwner->LoadScene(StateMachineExampleGame::SceneName::Lose);
+			}
+			break;
+		}
+		case ActorType::TrackingEnemy:
+		{
+			TrackingEnemy* collidedEnemy = dynamic_cast<TrackingEnemy*>(collidedActor);
 			assert(collidedEnemy);
 			AudioManager::GetInstance()->PlayLoseLivesSound();
 			collidedEnemy->Remove();
