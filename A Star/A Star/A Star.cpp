@@ -106,8 +106,13 @@ public:
                     if ((*nodeIter)->GetNode() == nodeCross)
                     {
                         //if the existing node has a lower weight, replace the node's weight and previous node
-                        if((*nodeIter)->NodeCompare(this, pathWeight))
-                            nodeList.push_back(*nodeIter);//readd the node back into the nodelist
+                        if ((*nodeIter)->NodeCompare(this, pathWeight))
+                        {
+                            //read the node back into the nodelist
+                            nodeList.push_back(*nodeIter);
+                            //removing from completed nodelist, to prevent duplicates in the delete process
+                            completedNodeList.erase(nodeIter);
+                        }
                         replacedNode = true;
                         break;
                     }
@@ -162,6 +167,7 @@ void DeleteVectorValues(vector<AStarTracking*>& list)
     while (!list.empty())
     {
         delete list.back();
+        list.back();
         list.pop_back();
     }
 }
@@ -206,7 +212,15 @@ int main()
     pathList.push_back(AStarPaths("a", "end", 7));
     pathList.push_back(AStarPaths("c", "end", 1));
 
-    GetToEndAStar(pathList);
 
-    std::cout << "Hello World!\n";
+    pathList.push_back(AStarPaths("a", "1", 1));
+    pathList.push_back(AStarPaths("2", "1", 1));
+    pathList.push_back(AStarPaths("2", "3", 1));
+    pathList.push_back(AStarPaths("4", "3", 1));
+    pathList.push_back(AStarPaths("4", "5", 1));
+    pathList.push_back(AStarPaths("end", "5", 1));
+
+    pathList.push_back(AStarPaths("3", "c", 1));
+
+    GetToEndAStar(pathList);
 }

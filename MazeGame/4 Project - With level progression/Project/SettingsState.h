@@ -11,6 +11,7 @@ public:
 	SettingsState(StateMachineExampleGame* pOwner);
 	~SettingsState() = default;
 
+	virtual bool ProcessInput() override;
 	virtual bool Update(bool processInput = true) override;
 	virtual void Draw() override;
 };

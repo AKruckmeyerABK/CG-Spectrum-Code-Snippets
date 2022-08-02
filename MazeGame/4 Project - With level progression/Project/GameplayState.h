@@ -28,11 +28,13 @@ public:
 	GameplayState(StateMachineExampleGame* pOwner);
 	~GameplayState();
 
+	virtual bool ProcessInput() override;
 	virtual void Enter() override;
 	virtual bool Update(bool processInput = true) override;
 	virtual void Draw() override;
 
 private:
+	void CheckBeatLevel();
 	void HandleCollision(int newPlayerX, int newPlayerY);
 	bool Load();
 	void DrawHUD(const HANDLE& console);
