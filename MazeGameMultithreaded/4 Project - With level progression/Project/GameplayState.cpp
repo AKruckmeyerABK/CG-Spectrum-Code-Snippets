@@ -119,6 +119,7 @@ bool GameplayState::ProcessInput()
 		m_player.DropKey();
 	}
 
+	lock_guard<std::mutex> Guard(PlayerActorStepMutex);
 	// If position never changed
 	if (newPlayerX == m_player.GetXPosition() && newPlayerY == m_player.GetYPosition())
 	{
@@ -300,6 +301,7 @@ void GameplayState::ActorUpdate_Threaded()
 		moveFrame += dt;
 		if (moveFrame > msBetweenMove)
 		{
+			lock_guard<std::mutex> Guard(PlayerActorStepMutex);
 			m_pLevel->UpdateActors();
 			HandleCollision(m_player.GetXPosition(), m_player.GetYPosition());
 			//PlacableActor* collidedActor = m_pLevel->CheckCollisionWithActors(m_player.GetXPosition(), m_player.GetYPosition());
