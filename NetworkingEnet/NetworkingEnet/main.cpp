@@ -1,0 +1,231 @@
+#pragma once
+
+#include <enet/enet.h>
+#include <iostream>
+#include <sstream>
+#include <thread>
+#include <mutex>
+using namespace std;
+
+ENetAddress address;
+ENetHost* server; //server->peers
+
+string username;
+string entry;
+string hostName = "127.0.0.1";
+
+bool exitProgram = false;
+bool connected = false;
+
+bool CreateClient();
+bool CreateServer();
+void ClientLoop();
+void ServerLoop();
+void MainNetworkingThread(int userInput);
+
+
+
+int main(int argc, char** argv)
+{
+    cout << "Enter Your Username: ";
+    getline(cin, username);
+
+    server = nullptr;
+    //server = nullptr;
+
+    if (enet_initialize() != 0)
+    {
+        fprintf(stderr, "An error occurred while initializing ENet.\n");
+        cout << "An error occurred while initializing ENet." << endl;
+        return EXIT_FAILURE;
+    }
+    atexit(enet_deinitialize);
+
+    cout << "1) Create Server" << endl;
+    cout << "2) Create Client" << endl;
+    int userInput;
+    string none;//a buffer to prevent an initial entry with the next getline.
+    cin >> userInput;
+    getline(cin, none);
+
+    thread NetworkingThread(MainNetworkingThread, userInput);
+
+    string message;
+    while (!exitProgram)
+    {
+        getline(cin, entry);
+        if (entry == "quit")
+        {
+            exitProgram = true;
+        }
+        else
+        {
+            if (connected)
+            {
+                message = username + ": " + entry;
+                ENetPacket* packet = enet_packet_create(reinterpret_cast<const void *>(message.c_str()),
+                    message.size() + 1,
+                    ENET_PACKET_FLAG_RELIABLE);
+                enet_host_broadcast(server, 0, packet);
+                enet_host_flush(server);
+            }
+            else
+            {
+                cout << "Not connected to a server.";
+            }
+        }
+    }
+
+    NetworkingThread.join();
+}
+
+bool CreateClient()
+{
+    server = enet_host_create(NULL /* create a client host */,
+        1 /* only allow 1 outgoing connection */,
+        2 /* allow up 2 channels to be used, 0 and 1 */,
+        0 /* assume any amount of incoming bandwidth */,
+        0 /* assume any amount of outgoing bandwidth */);
+    return server != nullptr;
+}
+
+bool CreateServer()
+{
+    /* Bind the server to the default localhost.     */
+    /* A specific host address can be specified by   */
+    /* enet_address_set_host (& address, "x.x.x.x"); */
+    address.host = ENET_HOST_ANY;
+    /* Bind the server to port 1234. */
+    address.port = 1234;
+    server = enet_host_create(&address /* the address to bind the server host to */,
+        32      /* allow up to 32 clients and/or outgoing connections */,
+        2      /* allow up to 2 channels to be used, 0 and 1 */,
+        0      /* assume any amount of incoming bandwidth */,
+        0      /* assume any amount of outgoing bandwidth */);
+
+    return server != nullptr;
+}
+
+void MainNetworkingThread(int userInput)
+{
+    if (userInput == 1)
+    {
+        if (!CreateServer())
+        {
+            fprintf(stderr,
+                "An error occurred while trying to create an ENet server host.\n");
+            exit(EXIT_FAILURE);
+        }
+        ServerLoop();
+        
+    }
+    else if (userInput == 2)
+    {
+        if (!CreateClient())
+        {
+            fprintf(stderr,
+                "An error occurred while trying to create an ENet client host.\n");
+            exit(EXIT_FAILURE);
+        }
+        ClientLoop();
+    }
+    else
+    {
+        cout << "Invalid Input" << endl;
+    }
+
+    if (server != nullptr)
+    {
+        enet_host_destroy(server);
+    }
+
+    if (server != nullptr)
+    {
+        enet_host_destroy(server);
+    }
+
+}
+
+void ClientLoop()
+{
+
+    ENetAddress address;
+    ENetEvent event;
+    ENetPeer* peer;
+    /* Connect to some.server.net:1234. */
+    enet_address_set_host(&address, hostName.c_str());
+    address.port = 1234;
+    /* Initiate the connection, allocating the two channels 0 and 1. */
+    peer = enet_host_connect(server, &address, 2, 0);
+    if (peer == NULL)
+    {
+        fprintf(stderr,
+            "No available peers for initiating an ENet connection.\n");
+        exit(EXIT_FAILURE);
+    }
+    /* Wait up to 5 seconds for the connection attempt to succeed. */
+    if (enet_host_service(server, &event, 5000) > 0 &&
+        event.type == ENET_EVENT_TYPE_CONNECT)
+    {
+        cout << "Connection to " << hostName << ":1234 succeeded." << endl;
+        connected = true;
+    }
+    else
+    {
+        /* Either the 5 seconds are up or a disconnect event was */
+        /* received. Reset the peer in the event the 5 seconds   */
+        /* had run out without any significant event.            */
+        enet_peer_reset(peer);
+        cout << "Connection to " << hostName << ":1234 failed." << endl;
+    }
+
+    while (!exitProgram)
+    {
+        ENetEvent event;
+        while (enet_host_service(server, &event, 1000) > 0)
+        {
+            switch (event.type)
+            {
+            case ENET_EVENT_TYPE_RECEIVE:
+                /* Clean up the packet now that we're done using it. */
+                cout << (char *)event.packet->data << endl;;
+                enet_packet_destroy(event.packet);
+
+                break;
+            }
+        }
+    }
+}
+
+void ServerLoop()
+{
+    while (!exitProgram)
+    {
+        ENetEvent event;
+        /* Wait up to 1000 milliseconds for an event. */
+        while (enet_host_service(server, &event, 1000) > 0)
+        {
+            switch (event.type)
+            {
+            case ENET_EVENT_TYPE_CONNECT:
+                printf("A new client connected from %x:%u.\n",
+                    event.peer->address.host,
+                    event.peer->address.port);
+                /* Store any relevant client information here. */
+                event.peer->data = (void*)"Client information";
+                connected = true;
+                break;
+            case ENET_EVENT_TYPE_RECEIVE:
+                /* Clean up the packet now that we're done using it. */
+                cout << (char*)event.packet->data << endl;
+                enet_packet_destroy(event.packet);
+                break;
+
+            case ENET_EVENT_TYPE_DISCONNECT:
+                printf("%s disconnected.\n", (char*)event.peer->data);
+                /* Reset the peer's client information. */
+                event.peer->data = NULL;
+            }
+        }
+    }
+}
